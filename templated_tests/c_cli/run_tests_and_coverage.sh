@@ -1,13 +1,27 @@
 #!/bin/bash
 
-# Run the tests
+# Exit on error
+set -e
+
+# Generate the test runner using the Ruby script from Unity
+echo "Generating test runner..."
+ruby Unity/auto/generate_test_runner.rb test_calc.c test_calc_Runner.c
+
+# Compile the test application with Unity and coverage flags
+echo "Compiling the test application..."
+gcc -o test_calc test_calc.c test_calc_Runner.c Unity/src/unity.c calc.c -lm -IUnity/src -fprofile-arcs -ftest-coverage
+
+# Run the compiled tests and generate coverage data
+echo "Running tests..."
 ./test_calc
 
-# Capture coverage data for all files
+# Capture coverage data and generate reports
+echo "Generating coverage reports..."
 lcov --capture --directory . --output-file coverage.info
+lcov --remove coverage.info '*/Unity/*' '*/test_*' --output-file coverage_filtered.info
+lcov --list coverage_filtered.info
 
-# Remove coverage data for test files
-lcov --remove coverage.info '*/test_calc.c' --output-file coverage.info
+# convert lcov to cobertura
+lcov_cobertura coverage_filtered.info
 
-# Print coverage summary to the console
-lcov --list coverage.info
+echo "Test and coverage reporting complete."

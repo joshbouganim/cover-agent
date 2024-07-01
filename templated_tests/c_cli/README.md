@@ -4,11 +4,12 @@ Simple command-line calculator for basic arithmetic operations.
 
 ## Prerequisites
 
-Install GCC, Ruby, and lcov. Clone the Unity test framework:
+Install GCC, Ruby, lcov, lcov-cobertura (until lcov is natively supported), and clone the Unity test framework:
 
 ```bash
 sudo apt-get update
 sudo apt-get install gcc ruby lcov
+pip install lcov_cobertura
 git clone https://github.com/ThrowTheSwitch/Unity.git
 ```
 
@@ -47,3 +48,6 @@ Run tests and generate coverage report:
 ./calc_tests
 lcov --capture --directory . --output-file coverage.info
 lcov --list coverage.info
+```
+
+See `run_tests_and_coverage.sh` for a complete script to build and run the tests with coverage

@@ -90,8 +90,13 @@ sh tests_integration/test_with_docker.sh \
 
 # C Calculator Example
 sh tests_integration/test_with_docker.sh \
-  --dockerfile "templated_tests/c_cli/Dockerfile" \
   --source-file-path "calc.c" \
   --test-file-path "test_calc.c" \
-  --test-command "gcc -o calc_tests calc.c Unity/src/unity.c -lm -IUnity/src -fprofile-arcs -ftest-coverage && ./calc_tests && gcov calc.c && lcov --capture --directory . --output-file coverage.info && lcov --list coverage.info" \
+  --code-coverage-report-path "coverage.xml" \
+  --test-command "./run_tests_and_coverage.sh" \
+  --test-command-dir "." \
+  --coverage-type "cobertura" \
+  --desired-coverage 50 \
+  --max-iterations 5 \
+  --included-files "calc.c" \
   --model $MODEL
