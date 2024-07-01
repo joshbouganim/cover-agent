@@ -49,7 +49,7 @@ sh tests_integration/test_with_docker.sh \
   --source-file-path "app.py" \
   --test-file-path "test_app.py" \
   --test-command "pytest --cov=. --cov-report=xml --cov-report=term" \
-  --model "gpt-3.5-turbo"
+  --model $MODEL
 
 # Go Webservice Example
 sh tests_integration/test_with_docker.sh \
@@ -86,4 +86,12 @@ sh tests_integration/test_with_docker.sh \
   --test-file-path "ui.test.js" \
   --test-command "npm run test:coverage" \
   --code-coverage-report-path "coverage/coverage.xml" \
+  --model $MODEL
+
+# C Calculator Example
+sh tests_integration/test_with_docker.sh \
+  --dockerfile "templated_tests/c_cli/Dockerfile" \
+  --source-file-path "calc.c" \
+  --test-file-path "test_calc.c" \
+  --test-command "gcc -o calc_tests calc.c Unity/src/unity.c -lm -IUnity/src -fprofile-arcs -ftest-coverage && ./calc_tests && gcov calc.c && lcov --capture --directory . --output-file coverage.info && lcov --list coverage.info" \
   --model $MODEL
