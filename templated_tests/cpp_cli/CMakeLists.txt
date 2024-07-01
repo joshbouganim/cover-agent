@@ -1,17 +1,16 @@
 cmake_minimum_required(VERSION 3.10)
 project(Calculator)
 
+# Set the C++ standard and enable coverage
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
 
 # Add main application
 add_executable(calculator main.cpp calculator.cpp)
 
-# GoogleTest requires threading support
+# Find and link Threads and GTest
 find_package(Threads REQUIRED)
-
-# Enable Google Test
-enable_testing()
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 

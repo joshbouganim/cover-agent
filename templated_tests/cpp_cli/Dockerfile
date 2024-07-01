@@ -1,7 +1,7 @@
-FROM ubuntu:20.04
+FROM gcc:14
 
 # Install build tools
-RUN apt-get update && apt-get install -y g++ cmake make
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y g++ cmake make lcov
 
 # Install Google Test source
 RUN apt-get install -y libgtest-dev
@@ -22,5 +22,11 @@ COPY . /app
 RUN cmake .
 RUN make
 
+# Entry point runs the test and captures coverage data
+ENTRYPOINT ["sh", "-c", "./test_calculator && \
+                        lcov --capture --directory . --output-file coverage.info && \
+                        lcov --remove coverage.info '/usr/*' '*/test_*' --output-file coverage_filtered.info && \
+                        lcov --list coverage_filtered.info"]
+
 # Command to run tests
-CMD ["./test_calculator"]
+CMD []
