@@ -90,6 +90,7 @@ sh tests_integration/test_with_docker.sh \
 
 # C Calculator Example
 sh tests_integration/test_with_docker.sh \
+  --dockerfile "templated_tests/c_cli/Dockerfile" \
   --source-file-path "calc.c" \
   --test-file-path "test_calc.c" \
   --code-coverage-report-path "coverage.xml" \
@@ -99,4 +100,18 @@ sh tests_integration/test_with_docker.sh \
   --desired-coverage 50 \
   --max-iterations 5 \
   --included-files "calc.c" \
+  --model $MODEL
+
+  # C++ Calculator Example
+sh tests_integration/test_with_docker.sh \
+  --dockerfile "templated_tests/cpp_cli/Dockerfile" \
+  --source-file-path "calculator.cpp" \
+  --test-file-path "test_calculator.cpp" \
+  --code-coverage-report-path "coverage.xml" \
+  --test-command "./build_and_test_with_coverage.sh" \
+  --test-command-dir "." \
+  --coverage-type "cobertura" \
+  --desired-coverage 50 \
+  --max-iterations 5 \
+  --included-files "calculator.cpp"
   --model $MODEL
