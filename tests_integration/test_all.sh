@@ -93,7 +93,7 @@ sh tests_integration/test_with_docker.sh \
   --source-file-path "calc.c" \
   --test-file-path "test_calc.c" \
   --code-coverage-report-path "coverage.xml" \
-  --test-command "./run_tests_and_coverage.sh" \
+  --test-command "./build_and_test_with_coverage.sh" \
   --test-command-dir "." \
   --coverage-type "cobertura" \
   --desired-coverage 50 \

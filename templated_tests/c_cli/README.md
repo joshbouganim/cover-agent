@@ -50,4 +50,4 @@ lcov --capture --directory . --output-file coverage.info
 lcov --list coverage.info
 ```
 
-See `run_tests_and_coverage.sh` for a complete script to build and run the tests with coverage
+See `build_and_test_with_coverage.sh` for a complete script to build and run the tests with coverage
