@@ -1,7 +1,11 @@
-FROM gcc:14
+FROM ubuntu:jammy
 
 # Install build tools
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y g++ cmake make lcov
+
+# install packages for code coverage
+RUN apt-get install -y python3 python3-pip
+RUN pip install lcov_cobertura
 
 # Install Google Test source
 RUN apt-get install -y libgtest-dev

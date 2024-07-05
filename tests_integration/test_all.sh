@@ -104,6 +104,6 @@ sh tests_integration/test_with_docker.sh \
   --source-file-path "calculator.cpp" \
   --test-file-path "test_calculator.cpp" \
   --code-coverage-report-path "coverage.xml" \
-  --test-command "./build_and_test_with_coverage.sh" \
+  --test-command "sh build_and_test_with_coverage.sh" \
   --coverage-type "cobertura" \
   --model $MODEL
