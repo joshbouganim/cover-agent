@@ -1,6 +1,6 @@
 import pytest
 import xml.etree.ElementTree as ET
-from cover_agent.CoverageProcessor import CoverageProcessor
+from cover_agent.CoverageProcessor import CoverageProcessor, CoverageStats
 
 
 @pytest.fixture
@@ -37,15 +37,16 @@ class TestCoverageProcessor:
         # Initializes CoverageProcessor with cobertura coverage type for each test
         return CoverageProcessor("fake_path", "app.py", "cobertura")
 
-    def test_parse_coverage_report_cobertura(self, mock_xml_tree, processor):
+    def test_parse_coverage_report_cobertura(self, mock_xml_tree, processor: CoverageProcessor):
         """
         Tests the parse_coverage_report method for correct line number and coverage calculation with Cobertura reports.
         """
-        covered_lines, missed_lines, coverage_pct = processor.parse_coverage_report()
+        coverage_stats = processor.parse_coverage_report()
 
-        assert covered_lines == [1], "Should list line 1 as covered"
-        assert missed_lines == [2], "Should list line 2 as missed"
-        assert coverage_pct == 0.5, "Coverage should be 50 percent"
+        assert coverage_stats.covered_lines == [1], "Should list line 1 as covered"
+        assert coverage_stats.missed_lines == [2], "Should list line 2 as missed"
+        assert coverage_stats.coverage_percentage == 0.5, "Coverage should be 50 percent"
+        assert coverage_stats.file_names == ["app.py"], "File names should be 'app.py'"
 
     def test_correct_parsing_for_matching_package_and_class(self, mocker):
         # Setup
@@ -98,14 +99,13 @@ class TestCoverageProcessor:
         )
 
         # Invoke the parse_coverage_report_jacoco method
-        lines_covered, lines_missed, coverage_percentage = (
-            coverage_processor.parse_coverage_report_jacoco()
-        )
+        coverage_stats = coverage_processor.parse_coverage_report_jacoco()
 
         # Assert the results
-        assert lines_covered == [], "Expected lines_covered to be an empty list"
-        assert lines_missed == [], "Expected lines_missed to be an empty list"
-        assert coverage_percentage == 0, "Expected coverage percentage to be 0"
+        assert coverage_stats.covered_lines == [], "Expected lines_covered to be an empty list"
+        assert coverage_stats.missed_lines == [], "Expected lines_missed to be an empty list"
+        assert coverage_stats.coverage_percentage == 0, "Expected coverage percentage to be 0"
+        assert coverage_stats.file_names == [], "Expected files names to be []"
 
     def test_parse_coverage_report_unsupported_type(self):
         processor = CoverageProcessor("fake_path", "app.py", "unsupported_type")
@@ -171,15 +171,18 @@ class TestCoverageProcessor:
         )
         mock_parse = mocker.patch(
             "cover_agent.CoverageProcessor.CoverageProcessor.parse_coverage_report",
-            return_value=([], [], 0.0),
+            return_value=CoverageStats([],[],0.0,[]),
         )
 
         processor = CoverageProcessor("fake_path", "app.py", "cobertura")
-        result = processor.process_coverage_report(1234567890)
+        coverage_stats = processor.process_coverage_report(1234567890)
 
         mock_verify.assert_called_once_with(1234567890)
         mock_parse.assert_called_once()
-        assert result == ([], [], 0.0), "Expected result to be ([], [], 0.0)"
+        assert coverage_stats.coverage_percentage == 0.0, "Expected result to be 0.0"
+        assert coverage_stats.covered_lines == [], "Expected result to be []"
+        assert coverage_stats.missed_lines == [], "Expected result to be []"
+        assert coverage_stats.file_names == [], "Expected result to be []"
 
     def test_parse_missed_covered_lines_jacoco_key_error(self, mocker):
         mock_open = mocker.patch(

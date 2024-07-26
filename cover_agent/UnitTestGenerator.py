@@ -6,7 +6,7 @@ import json
 from wandb.sdk.data_types.trace_tree import Trace
 
 from cover_agent.Runner import Runner
-from cover_agent.CoverageProcessor import CoverageProcessor
+from cover_agent.CoverageProcessor import CoverageProcessor, CoverageStats
 from cover_agent.CustomLogger import CustomLogger
 from cover_agent.PromptBuilder import PromptBuilder
 from cover_agent.AICaller import AICaller
@@ -142,15 +142,11 @@ class UnitTestGenerator:
 
         # Use the process_coverage_report method of CoverageProcessor, passing in the time the test command was executed
         try:
-            lines_covered, lines_missed, percentage_covered = (
-                coverage_processor.process_coverage_report(
-                    time_of_test_command=time_of_test_command
-                )
-            )
+            coverage_stats = coverage_processor.process_coverage_report(time_of_test_command)
 
             # Process the extracted coverage metrics
-            self.current_coverage = percentage_covered
-            self.code_coverage_report = f"Lines covered: {lines_covered}\nLines missed: {lines_missed}\nPercentage covered: {round(percentage_covered * 100, 2)}%"
+            self.current_coverage = coverage_stats.coverage_percentage
+            self.code_coverage_report = f"Lines covered: {coverage_stats.covered_lines}\nLines missed: {coverage_stats.missed_lines}\nPercentage covered: {round(coverage_stats.coverage_percentage * 100, 2)}%"
         except AssertionError as error:
             # Handle the case where the coverage report does not exist or was not updated after the test command
             self.logger.error(f"Error in coverage processing: {error}")
@@ -607,10 +603,10 @@ class UnitTestGenerator:
             src_file_path=self.source_file_path,
             coverage_type=self.coverage_type,
         )
-        _, _, new_percentage_covered = new_coverage_processor.process_coverage_report(
+        coverage_stats = new_coverage_processor.process_coverage_report(
             time_of_test_command=time_of_test_command
         )
-        return new_percentage_covered
+        return coverage_stats.coverage_percentage
 
     def handle_coverage_failure(
         self, original_content, generated_test, stderr, stdout, exit_code

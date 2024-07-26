@@ -1,10 +1,33 @@
-from typing import Literal, Tuple
+from typing import Literal, Tuple, List
 import os
 import time
 import re
 import csv
 import xml.etree.ElementTree as ET
 from cover_agent.CustomLogger import CustomLogger
+
+
+class CoverageStats:
+    """
+    A data class for storing code coverage statistics.
+
+    Attributes:
+        covered_lines (List[int]): A list of line numbers that are covered by tests.
+        missed_lines (List[int]): A list of line numbers that are not covered by tests.
+        coverage_percentage (float): The percentage of lines covered by tests.
+        file_names (List[str]): A list of file names included in the coverage report.
+
+    Args:
+        covered_lines (List[int]): The line numbers that are covered by tests.
+        missed_lines (List[int]): The line numbers that are not covered by tests.
+        coverage_percentage (float): The percentage of lines covered by tests, represented as a float between 0 and 1.
+        file_names (List[str]): The names of the files included in the coverage report.
+    """
+    def __init__(self, covered_lines: List[int], missed_lines: List[int], coverage_percentage: float, file_names: List[str]):
+        self.covered_lines = covered_lines
+        self.missed_lines = missed_lines
+        self.coverage_percentage = coverage_percentage
+        self.file_names = file_names
 
 
 class CoverageProcessor:
@@ -38,7 +61,7 @@ class CoverageProcessor:
 
     def process_coverage_report(
         self, time_of_test_command: int
-    ) -> Tuple[list, list, float]:
+    ) -> CoverageStats:
         """
         Verifies the coverage report's existence and update time, and then
         parses the report based on its type to extract coverage data.
@@ -47,7 +70,7 @@ class CoverageProcessor:
             time_of_test_command (int): The time the test command was run, in milliseconds.
 
         Returns:
-            Tuple[list, list, float]: A tuple containing lists of covered and missed line numbers, and the coverage percentage.
+            CoverageStats: An object containing lists of covered and missed line numbers, coverage percentage, and file names.
         """
         self.verify_report_update(time_of_test_command)
         return self.parse_coverage_report()
@@ -73,13 +96,13 @@ class CoverageProcessor:
             file_mod_time_ms > time_of_test_command
         ), f"Fatal: The coverage report file was not updated after the test command. file_mod_time_ms: {file_mod_time_ms}, time_of_test_command: {time_of_test_command}. {file_mod_time_ms > time_of_test_command}"
 
-    def parse_coverage_report(self) -> Tuple[list, list, float]:
+    def parse_coverage_report(self) -> CoverageStats:
         """
         Parses a code coverage report to extract covered and missed line numbers for a specific file,
         and calculates the coverage percentage, based on the specified coverage report type.
 
         Returns:
-            Tuple[list, list, float]: A tuple containing lists of covered and missed line numbers, and the coverage percentage.
+            CoverageStats: An object containing lists of covered and missed line numbers, coverage percentage, and file names.
         """
         if self.coverage_type == "cobertura":
             return self.parse_coverage_report_cobertura()
@@ -93,50 +116,49 @@ class CoverageProcessor:
         else:
             raise ValueError(f"Unsupported coverage report type: {self.coverage_type}")
 
-    def parse_coverage_report_cobertura(self) -> Tuple[list, list, float]:
+    def parse_coverage_report_cobertura(self) -> CoverageStats:
         """
         Parses a Cobertura XML code coverage report to extract covered and missed line numbers for a specific file,
         and calculates the coverage percentage.
 
         Returns:
-            Tuple[list, list, float]: A tuple containing lists of covered and missed line numbers, and the coverage percentage.
+            CoverageStats: An object containing lists of covered and missed line numbers, coverage percentage, and file names.
         """
         tree = ET.parse(self.file_path)
         root = tree.getroot()
-        lines_covered, lines_missed = [], []
+        lines_covered, lines_missed, file_names = [], [], []
         filename = os.path.basename(self.src_file_path)
 
         for cls in root.findall(".//class"):
             name_attr = cls.get("filename")
-            if name_attr and name_attr.endswith(filename):
-                for line in cls.findall(".//line"):
-                    line_number = int(line.get("number"))
-                    hits = int(line.get("hits"))
-                    if hits > 0:
-                        lines_covered.append(line_number)
-                    else:
-                        lines_missed.append(line_number)
-                break  # Assuming filename is unique, break after finding and processing it
+            if name_attr:
+                file_names.append(name_attr)
+                if name_attr.endswith(filename):
+                    for line in cls.findall(".//line"):
+                        line_number = int(line.get("number"))
+                        hits = int(line.get("hits"))
+                        if hits > 0:
+                            lines_covered.append(line_number)
+                        else:
+                            lines_missed.append(line_number)
+                    break  # Assuming filename is unique, break after finding and processing it
 
         total_lines = len(lines_covered) + len(lines_missed)
         coverage_percentage = (
             (len(lines_covered) / total_lines) if total_lines > 0 else 0
         )
 
-        return lines_covered, lines_missed, coverage_percentage
+        return CoverageStats(lines_covered, lines_missed, coverage_percentage, file_names)
 
-    def parse_coverage_report_jacoco(self) -> Tuple[list, list, float]:
+    def parse_coverage_report_jacoco(self) -> CoverageStats:
         """
         Parses a JaCoCo XML code coverage report to extract covered and missed line numbers for a specific file,
         and calculates the coverage percentage.
 
-        Returns: Tuple[list, list, float]: A tuple containing empty lists of covered and missed line numbers,
-        and the coverage percentage. The reason being the format of the report for jacoco gives the totals we do not
-        sum them up. to stick with the current contract of the code and to do little change returning empty arrays.
-        I expect this should bring up a discussion on introduce a factory for different CoverageProcessors. Where the
-        total coverage percentage is returned to be evaluated only.
+        Returns:
+            CoverageStats: An object containing lists of covered and missed line numbers and the coverage percentage.
         """
-        lines_covered, lines_missed = [], []
+        lines_covered, lines_missed, file_names = [], [], []
 
         package_name, class_name = self.extract_package_and_class_java()
         missed, covered = self.parse_missed_covered_lines_jacoco(
@@ -146,11 +168,11 @@ class CoverageProcessor:
         total_lines = missed + covered
         coverage_percentage = (float(covered) / total_lines) if total_lines > 0 else 0
 
-        return lines_covered, lines_missed, coverage_percentage
+        return CoverageStats(lines_covered, lines_missed, coverage_percentage, file_names)
 
     def parse_missed_covered_lines_jacoco(
         self, package_name: str, class_name: str
-    ) -> tuple[int, int]:
+    ) -> Tuple[int, int]:
         with open(self.file_path, "r") as file:
             reader = csv.DictReader(file)
             missed, covered = 0, 0
@@ -161,12 +183,12 @@ class CoverageProcessor:
                         covered = int(row["LINE_COVERED"])
                         break
                     except KeyError as e:
-                        self.logger.error("Missing expected column in CSV: {e}")
+                        self.logger.error(f"Missing expected column in CSV: {e}")
                         raise
 
         return missed, covered
 
-    def extract_package_and_class_java(self):
+    def extract_package_and_class_java(self) -> Tuple[str, str]:
         package_pattern = re.compile(r"^\s*package\s+([\w\.]+)\s*;.*$")
         class_pattern = re.compile(r"^\s*public\s+class\s+(\w+).*")
 
