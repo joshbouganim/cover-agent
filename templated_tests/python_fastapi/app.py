@@ -1,5 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from datetime import date, datetime
+import math
+
+from services.root_service import root_message
 
 app = FastAPI()
 
@@ -11,7 +14,7 @@ async def root():
     No parameters are passed into the function.
     Returns a dictionary with a welcome message.
     """
-    return {"message": "Welcome to the FastAPI application!"}
+    return {"message": root_message()}
 
 
 @app.get("/current-date")
