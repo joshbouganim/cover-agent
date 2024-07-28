@@ -146,6 +146,7 @@ class UnitTestGenerator:
 
             # Process the extracted coverage metrics
             self.current_coverage = coverage_stats.coverage_percentage
+            self.covered_files = coverage_stats.file_names
             self.code_coverage_report = f"Lines covered: {coverage_stats.covered_lines}\nLines missed: {coverage_stats.missed_lines}\nPercentage covered: {round(coverage_stats.coverage_percentage * 100, 2)}%"
         except AssertionError as error:
             # Handle the case where the coverage report does not exist or was not updated after the test command

@@ -131,17 +131,19 @@ class CoverageProcessor:
 
         for cls in root.findall(".//class"):
             name_attr = cls.get("filename")
-            if name_attr:
-                file_names.append(name_attr)
-                if name_attr.endswith(filename):
-                    for line in cls.findall(".//line"):
-                        line_number = int(line.get("number"))
-                        hits = int(line.get("hits"))
-                        if hits > 0:
-                            lines_covered.append(line_number)
-                        else:
-                            lines_missed.append(line_number)
-                    break  # Assuming filename is unique, break after finding and processing it
+            file_names.append(name_attr)
+
+
+        for cls in root.findall(".//class"):
+            if name_attr and name_attr.endswith(filename):
+                for line in cls.findall(".//line"):
+                    line_number = int(line.get("number"))
+                    hits = int(line.get("hits"))
+                    if hits > 0:
+                        lines_covered.append(line_number)
+                    else:
+                        lines_missed.append(line_number)
+                break  # Assuming filename is unique, break after finding and processing it
 
         total_lines = len(lines_covered) + len(lines_missed)
         coverage_percentage = (

@@ -174,10 +174,22 @@ class CoverAgent:
         Run the CoverAgent process to generate and validate tests, and report results.
         """
         self._initialize_wandb()  # Initialize WandB if the API key is set
-        test_results_list, iteration_count = (
-            self._run_tests()
-        )  # Run the tests and get the results
-        self._handle_completion(iteration_count)  # Handle the completion of the process
+        if not self.args.recurse:
+            test_results_list, iteration_count = (
+                self._run_tests()
+            )  # Run the tests and get the results
+            self._handle_completion(iteration_count)  # Handle the completion of the process
+        else:
+            self.logger.info(f"********RECURSING*******\n{self.test_gen.covered_files}")
+            for f in self.test_gen.covered_files:
+                self.logger.info(f"****WORKING********: {f}")
+                self.test_gen.source_file_path = f
+                
+                test_results_list, iteration_count = (
+                    self._run_tests()
+                )  # Run the tests and get the results
+                self._handle_completion(iteration_count)  # Handle the completion of the process
+                    
         self._log_token_usage()  # Log the token usage
         # Generate and save the report
         ReportGenerator.generate_report(test_results_list, self.args.report_filepath)
